@@ -204,3 +204,8 @@ ip-10-240-94-126.eu-west-1.compute.internal     master  True
 Your cluster test-cluster.k8s.local is ready
 ```
 **NOTE :** Do not proceed untill this command is successful
+
+#### Deploy Cluster Autoscaler
+```
+kubectl apply -f cluster-autoscaler-autodiscover.yaml
+```
