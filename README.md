@@ -34,7 +34,7 @@ sudo mv kops-linux-amd64 /usr/local/bin/kops
 
 #### Create ssh keygen with empty passphrase
 ```
-ssh-keygen -t rsa -C "k8s" -f ~/.ssh/k8s -P ""
+ssh-keygen -t rsa -C "k8s" -f ${HOME}/.ssh/k8s -P ""
 ```
 
 #### Create AWS VPC to deploy k8s cluster
@@ -120,9 +120,87 @@ kops edit ig --name=test-cluster.k8s.local nodes
 ```
 - Above command will open node instance manifest file. Add below 3 lines under 'spec' section. 
 ```
-	cloudLabels:
-      k8s.io/cluster-autoscaler/test-cluster.k8s.local: "true"
-      k8s.io/cluster-autoscaler/enabled: "true"
+cloudLabels:
+  k8s.io/cluster-autoscaler/test-cluster.k8s.local: "true"
+  k8s.io/cluster-autoscaler/enabled: "true"
 ```
 **NOTE :** This is required to locate your node auto-scaling object by k8s Cluster Autoscaler
 
+#### Configure bastion server to ssh into your cluster nodes
+```
+kops create instancegroup bastions --role Bastion --subnet utility-eu-west-1a
+```
+- Above command will open a new manifest file in you default editor with details of bastion instance group. Save and exit.
+
+#### Update k8s cluster
+- This command will create all necessary objects for your cluster in AWS
+```
+kops update cluster --name test-cluster.k8s.local --yes
+```
+
+- Command will take around 10minutes to finish. It should end up with console output something like this :
+```
+kops has set your kubectl context to test-cluster.k8s.local
+
+Cluster is starting.  It should be ready in a few minutes.
+
+Suggestions:
+ * validate cluster: kops validate cluster
+ * list nodes: kubectl get nodes --show-labels
+ * to ssh to the bastion, you probably want to configure a bastionPublicName.
+ * the admin user is specific to Debian. If not using Debian please use the appropriate user based on your OS.
+ * read about installing addons at: https://github.com/kubernetes/kops/blob/master/docs/addons.md.
+```
+
+#### Update bastion instance security group to ssh into instance
+```
+BASTION_SG_1=$(aws ec2 describe-security-groups --filter Name=vpc-id,Values=${VPC_ID} Name=group-name,Values=bastion-elb.test-cluster.k8s.local --query 'SecurityGroups[*].[GroupId]' --output text)
+BASTION_SG_2=$(aws ec2 describe-security-groups --filter Name=vpc-id,Values=${VPC_ID} Name=group-name,Values=bastion.test-cluster.k8s.local --query 'SecurityGroups[*].[GroupId]' --output text)
+
+-- Get bastion instance public ip
+BASTION_PUB_IP=$(aws ec2 describe-instances --filter "Name=tag:Name,Values=bastions.test-cluster.k8s.local" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
+BASTION_ID=$(aws ec2 describe-instances --filter "Name=tag:Name,Values=bastions.test-cluster.k8s.local" --query 'Reservations[].Instances[].InstanceId' --output text)
+
+-- Attach BASTION_SG_ID to BASTION_ID
+aws --region eu-west-1 ec2 modify-instance-attribute --instance-id ${BASTION_ID} --groups ${BASTION_SG_1} ${BASTION_SG_2}
+```
+
+#### Copy ssh keys used to brought up our k8s cluster to bastion instance
+```
+scp -i ${HOME}/.ssh/k8s ${HOME}/.ssh/k8s admin@${BASTION_PUB_IP}:~/.ssh/.
+```
+- Check if we can ssh into bastion instance.
+```
+ssh -i ${HOME}/.ssh/k8s admin@${BASTION_PUB_IP}
+```
+- Exit ssh session
+
+#### Validate Cluster
+- Time to check validity of cluster
+```
+kops validate cluster
+```
+- If cluster setup is completed by kops, you should see console output something like this.
+```
+Validating cluster test-cluster.k8s.local
+
+INSTANCE GROUPS
+NAME                    ROLE    MACHINETYPE     MIN     MAX     SUBNETS
+bastions                Bastion t2.micro        1       1       utility-eu-west-1a
+master-eu-west-1a       Master  t2.medium       1       1       eu-west-1a
+master-eu-west-1b       Master  t2.medium       1       1       eu-west-1b
+master-eu-west-1c       Master  t2.medium       1       1       eu-west-1c
+nodes                   Node    t2.medium       3       3       eu-west-1a,eu-west-1b,eu-west-1c
+
+NODE STATUS
+NAME                                            ROLE    READY
+ip-10-240-115-201.eu-west-1.compute.internal    node    True
+ip-10-240-121-250.eu-west-1.compute.internal    master  True
+ip-10-240-36-14.eu-west-1.compute.internal      node    True
+ip-10-240-45-220.eu-west-1.compute.internal     master  True
+ip-10-240-80-231.eu-west-1.compute.internal     node    True
+ip-10-240-94-126.eu-west-1.compute.internal     master  True
+
+Your cluster test-cluster.k8s.local is ready
+```
+**NOTE :** Do not proceed untill this command is successful
