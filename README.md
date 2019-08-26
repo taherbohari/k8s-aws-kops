@@ -147,15 +147,15 @@ spec:
 ```
 kops create instancegroup bastions --role Bastion --subnet utility-eu-west-1a
 ```
-- Above command will open a new manifest file in you default editor with details of bastion instance group. Save and exit.
+Above command will open a new manifest file in you default editor with details of bastion instance group. Save and exit.
 
 #### Update k8s cluster
-- This command will create all necessary objects for your cluster in AWS
+This command will create all necessary objects for your cluster in AWS
 ```
 kops update cluster --name test-cluster.k8s.local --yes
 ```
 
-- Command will take around 10minutes to finish. It should end up with console output something like this :
+Command will take around 10minutes to finish. It should end up with console output something like this :
 ```
 kops has set your kubectl context to test-cluster.k8s.local
 
@@ -186,18 +186,18 @@ aws --region eu-west-1 ec2 modify-instance-attribute --instance-id ${BASTION_ID}
 ```
 scp -i ${HOME}/.ssh/k8s ${HOME}/.ssh/k8s admin@${BASTION_PUB_IP}:~/.ssh/.
 ```
-- Check if we can ssh into bastion instance.
+Now, check if we can ssh into bastion instance.
 ```
 ssh -i ${HOME}/.ssh/k8s admin@${BASTION_PUB_IP}
 ```
-- Exit ssh session
+Exit ssh session
 
 #### Validate Cluster
-- Time to check validity of cluster
+Time to check validity of cluster
 ```
 kops validate cluster
 ```
-- If cluster setup is completed by kops, you should see console output something like this.
+If cluster setup is completed by kops, you should see console output something like this.
 ```
 Validating cluster test-cluster.k8s.local
 
