@@ -16,6 +16,7 @@ Deploy private k8s cluster using kops on AWS
 - k8s version : 1.13.0
 - k8s Master Node Count : 3
 - k8s Worker Node Count : 3
+
 **NOTE :** Use values as per your cluster requirement
 
 ## Environment Variables
@@ -26,6 +27,7 @@ export ZONES=${ZONES:-"eu-west-1a,eu-west-1b,eu-west-1c"}
 export KOPS_CLUSTER_NAME=${KOPS_CLUSTER_NAME:-"test-cluster.k8s.local"}
 export KOPS_STATE_STORE="s3://k8s-test-state-store-ubuntu"		#replace it with your s3 bucket name
 ```
+
 **NOTE :** Make changes as per your cluster requirement
 
 ## Steps
