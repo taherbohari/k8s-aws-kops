@@ -222,7 +222,9 @@ Your cluster test-cluster.k8s.local is ready
 ```
 **NOTE :** Do not proceed untill this command is successful
 
-#### Deploy Cluster Autoscaler
+#### Setup Cluster Autoscaler
+First, attach **AutoScalingFullAccess** AWS Policy to IAM Role **nodes.test-cluster.k8s.local** from AWS Console
+Now deploy cluster autoscaler
 ```
-kubectl apply -f cluster-autoscaler-autodiscover.yaml
+kubectl apply -f manifests/cluster-autoscaler-autodiscover.yaml
 ```
