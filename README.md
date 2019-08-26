@@ -105,7 +105,7 @@ Finally configure your cluster with: kops update cluster --name test-cluster.k8s
 ```
 kops edit cluster --name test-cluster.k8s.local
 ```
-- Above command will open k8s manifest file. Now edit below config options to access your k8s cluster from your network only.
+Above command will open k8s manifest file. Now edit below config options to access your k8s cluster from your network only.
 ```
   kubernetesApiAccess:
   - 0.0.0.0/0           ### Delete this entry and add your networks public ip's
@@ -118,11 +118,28 @@ kops edit cluster --name test-cluster.k8s.local
 ```
 kops edit ig --name=test-cluster.k8s.local nodes
 ```
-- Above command will open node instance manifest file. Add below 3 lines under 'spec' section. 
+Above command will open node instance manifest file. Add below 3 lines under 'spec' section. 
 ```
 cloudLabels:
   k8s.io/cluster-autoscaler/test-cluster.k8s.local: "true"
   k8s.io/cluster-autoscaler/enabled: "true"
+```
+After updating manifest, file contents will look something like this
+```
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: 2019-08-26T05:27:40Z
+  labels:
+    kops.k8s.io/cluster: test-cluster.k8s.local
+  name: nodes
+spec:
+  cloudLabels:
+    k8s.io/cluster-autoscaler/test-cluster.k8s.local: "true"
+    k8s.io/cluster-autoscaler/enabled: "true"
+  image: kope.io/k8s-1.12-debian-stretch-amd64-hvm-ebs-2019-06-21
+...
+...
 ```
 **NOTE :** This is required to locate your node auto-scaling object by k8s Cluster Autoscaler
 
